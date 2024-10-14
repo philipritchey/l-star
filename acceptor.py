@@ -27,6 +27,9 @@ class Acceptor:
     q = self.q0
     for a in compact(string):
       if a != 'λ':
+        if (q,a) not in self.d:
+          # transition doesn't exist -> reject
+          return False
         q = self.d[(q,a)]
     return q in self.F
 
