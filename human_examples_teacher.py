@@ -1,5 +1,5 @@
 '''
-HumanTeacher
+HumanExamplesTeacher
 '''
 
 from typing import Optional
