@@ -54,7 +54,7 @@ class ObservationTable:
         if not good:
           # print(f'[DEBUG] no s such that row({t}) = row(s)')
           return False
-      return True
+    return True
     # return all(any(row(t, table) == row(s, table) for s in table.S) for t in (compact(f'{s}{a}') for s in table.S for a in A))
 
   def consistent(self) -> bool:
