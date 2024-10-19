@@ -15,9 +15,11 @@ class HumanLambdaTeacher(Teacher):
   def __init__(self, membership: Callable[[str], bool]):
     self.membership = membership
     self.human = HumanTeacher()
+    self.query_history = []
 
   def membership_query(self, string: str) -> bool:
     answer = self.membership(string)
+    self.query_history.append(string)
     # print(f'[DEBUG] query: {string} -> {"accept" if answer else "reject"}')
     return answer
 

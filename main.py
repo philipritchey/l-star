@@ -98,4 +98,11 @@ if __name__ == '__main__':
     # ))
   # l_star('ab', HumanTeacher())
 
-  l_star('01', HumanLambdaTeacher(lambda string : string.find('00') >= 0 and string.find('00', string.find('00') + 1) == -1))
+  # contains 00 exactly once
+  # l_star('01', HumanLambdaTeacher(lambda string : string.find('00') >= 0 and string.find('00', string.find('00') + 1) == -1))
+  # multiple of 3 0s
+  teacher = HumanLambdaTeacher(lambda string : string.count('0') % 3 == 0)
+  l_star('01', teacher)
+  print(f'{len(teacher.query_history)} queries')
+  for q in teacher.query_history:
+    print(q)
