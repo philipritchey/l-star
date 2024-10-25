@@ -10,12 +10,12 @@ from human_teacher import HumanTeacher
 
 class HumanLambdaTeacher(Teacher):
   '''
-  A minimally adequate teacher with a membership function, backed up by a humn
+  A minimally adequate teacher with a membership function, backed up by a human
   '''
   def __init__(self, membership: Callable[[str], bool]):
     self.membership = membership
     self.human = HumanTeacher()
-    self.query_history = []
+    self.query_history: list[str] = []
 
   def membership_query(self, string: str) -> bool:
     answer = self.membership(string)

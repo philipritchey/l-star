@@ -8,6 +8,7 @@ by Dana Angluin
 from human_teacher import HumanTeacher
 from human_examples_teacher import HumanExamplesTeacher
 from human_lambda_teacher import HumanLambdaTeacher
+from human_lambda_examples_teacher import HumanLambdaExamplesTeacher
 from teacher import Teacher
 from my_types import Alphabet
 from obervation_table import ObservationTable
@@ -101,7 +102,10 @@ if __name__ == '__main__':
   # contains 00 exactly once
   # l_star('01', HumanLambdaTeacher(lambda string : string.find('00') >= 0 and string.find('00', string.find('00') + 1) == -1))
   # multiple of 3 0s
-  teacher = HumanLambdaTeacher(lambda string : string.count('0') % 3 == 0)
+  # teacher = HumanLambdaTeacher(lambda string : string.count('0') % 3 == 0)
+  P: set[str] = {'000'}
+  N: set[str] = set()
+  teacher = HumanLambdaExamplesTeacher(lambda string : string.count('0') % 3 == 0, P, N)
   l_star('01', teacher)
   print(f'{len(teacher.query_history)} queries')
   for q in teacher.query_history:

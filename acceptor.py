@@ -8,7 +8,7 @@ class Acceptor:
   '''
   a DFA
   '''
-  def __init__(self, Q: set[State], q0: State, F: set[State], d: dict[(State, str), State]):
+  def __init__(self, Q: set[State], q0: State, F: set[State], d: dict[tuple[State, str], State]):
     self.Q = Q
     self.q0 = q0
     self.F = F
@@ -50,8 +50,8 @@ class Acceptor:
     print this DFA to standard output
     '''
     alphabet = set()
-    for t, _ in self.d.items():
-      _, a = t
+    for state_str, _ in self.d.items():
+      _, a = state_str
       alphabet.add(a)
     print('state |', end='')
     for a in alphabet:

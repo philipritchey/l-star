@@ -136,7 +136,7 @@ class ObservationTable:
     Q: set[State] = set()
     q0: State = -1
     F: set[State] = set()
-    d: dict[(State, str), State] = {}
+    d: dict[tuple[State, str], State] = {}
 
     list_e = list(self.E)
     for s in self.S:
@@ -182,8 +182,8 @@ class ObservationTable:
       for e in self.E:
         t = compact(f'{s}{e}')
         if t in self.T:
-          f = str(self.T[t])
-          print(f' | {f}{" "*(5-len(f))}', end='')
+          fn = str(self.T[t])
+          print(f' | {fn}{" "*(5-len(fn))}', end='')
           v.add(t)
         else:
           print(' |   ?  ', end='')
