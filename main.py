@@ -83,6 +83,8 @@ def l_star(A: Alphabet, teacher: Teacher) -> Acceptor:
 
 
 if __name__ == '__main__':
+  l_star('ab', HumanTeacher())
+
   # l_star('01', HumanExamplesTeacher(
     # every 3rd symbol is 0
     # {'000','110','010100'},
@@ -97,16 +99,15 @@ if __name__ == '__main__':
     # {'00', '001', '0010', '0011', '0100', '00110', '100', '1100', '10100', '101001', '101100', '1010010', '1010011', '1010100', '10100110', '10100111', '101001110'},
     # {'λ', '0', '01', '000', '010', '0001', '0000', '00000', '00001', '00010', '00011', '00100', '000000', '000010', '000100', '000101', '000110', '0000000', '0000100', '0001000', '0001010', '0001100', '00010100', '00010000', '1', '10', '11', '101', '110', '1000', '1010', '1011', '10000', '10101', '10110', '101000', '101010', '1010000', '10100000', '10100100', '101001000', '101001100', '1010011000', '1010011100', '10100110001'}
     # ))
-  # l_star('ab', HumanTeacher())
 
   # contains 00 exactly once
   # l_star('01', HumanLambdaTeacher(lambda string : string.find('00') >= 0 and string.find('00', string.find('00') + 1) == -1))
   # multiple of 3 0s
   # teacher = HumanLambdaTeacher(lambda string : string.count('0') % 3 == 0)
-  P: set[str] = {'000'}
-  N: set[str] = set()
-  teacher = HumanLambdaExamplesTeacher(lambda string : string.count('0') % 3 == 0, P, N)
-  l_star('01', teacher)
-  print(f'{len(teacher.query_history)} queries')
-  for q in teacher.query_history:
-    print(q)
+  # P: set[str] = {'000'}
+  # N: set[str] = set()
+  # teacher = HumanLambdaExamplesTeacher(lambda string : string.count('0') % 3 == 0, P, N)
+  # l_star('01', teacher)
+  # print(f'{len(teacher.query_history)} queries')
+  # for q in teacher.query_history:
+  #   print(q)
