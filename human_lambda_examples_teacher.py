@@ -26,12 +26,12 @@ class HumanLambdaExamplesTeacher(Teacher):
     return answer
 
   def respond_to_conjecture(self, conjecture: Acceptor) -> Optional[str]:
-    for p in self.positive_examples:
-      if conjecture.rejects(p):
-        print(f'[DEBUG] conjecture rejected: failed to accept {p}')
-        return p
     for n in self.negative_examples:
       if conjecture.accepts(n):
         print(f'[DEBUG] conjecture rejected: failed to reject {n}')
         return n
+    for p in self.positive_examples:
+      if conjecture.rejects(p):
+        print(f'[DEBUG] conjecture rejected: failed to accept {p}')
+        return p
     return self.human.respond_to_conjecture(conjecture)

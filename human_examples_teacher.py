@@ -32,12 +32,12 @@ class HumanExamplesTeacher(Teacher):
 
   def respond_to_conjecture(self, conjecture: Acceptor) -> Optional[str]:
     # conjecture.print_acceptor()
-    for p in self.P:
-      if conjecture.rejects(p):
-        # print(f'[DEBUG] conjecture rejected: failed to accept {p}')
-        return p
     for n in self.N:
       if conjecture.accepts(n):
         # print(f'[DEBUG] conjecture rejected: failed to reject {n}')
         return n
+    for p in self.P:
+      if conjecture.rejects(p):
+        # print(f'[DEBUG] conjecture rejected: failed to accept {p}')
+        return p
     return self.human.respond_to_conjecture(conjecture)
