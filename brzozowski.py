@@ -4,11 +4,13 @@ brzozowski algebraic method
 
 from sexpr import sexpr
 
+EMPTY_LANGUAGE = '∅'
+EMPTY_STRING = 'ε'
+CONCAT = 'concat'
+OPTIONAL = 'option'
 STAR = 'star'
 UNION = 'union'
-CONCAT = 'concat'
-EMPTY_STRING = 'ε'
-EMPTY_LANGUAGE = '∅'
+
 
 class literal(sexpr):
   def __init__(self, symbol: str):
@@ -29,6 +31,11 @@ class union(sexpr):
 class star(sexpr):
   def __init__(self, child: sexpr):
     sexpr.__init__(self, STAR)
+    self.left = child
+
+class optional(sexpr):
+  def __init__(self, child: sexpr):
+    sexpr.__init__(self, OPTIONAL)
     self.left = child
 
 class empty_string(sexpr):
@@ -180,45 +187,73 @@ def brzozowski(m: int, alphabet: str, final: set[int], trans: dict[tuple[int, st
 def simplify(expr: sexpr) -> sexpr:
   match expr.name:
     case 'union':
+      # (e|e) => e
       if expr.left == expr.right:
         return simplify(expr.left)
 
+      # ((e|f)|g) => (e|(f|g))
       if expr.left.name == 'union':
         e, f, g = expr.left.left, expr.left.right, expr.right
         return simplify(union(e, union(f, g)))
 
+      # (∅|e) => e
       if expr.left.name == EMPTY_LANGUAGE:
         return simplify(expr.right)
 
+      # (e|∅) => e
       if expr.right.name == EMPTY_LANGUAGE:
         return simplify(expr.left)
+
+      # (ε|e) => e?
+      if expr.left.name == EMPTY_STRING:
+        return simplify(optional(expr.right))
+
+      # (e|ε) => e?
+      if expr.right.name == EMPTY_STRING:
+        return simplify(optional(expr.left))
 
       return union(simplify(expr.left), simplify(expr.right))
 
     case 'concat':
+      # (ef)g => e(fg)
       if expr.left.name == 'concat':
         e, f, g = expr.left.left, expr.left.right, expr.right
         return simplify(concat(e, concat(f, g)))
 
-      if expr.left.name == EMPTY_STRING:
-        return simplify(expr.right)
-
-      if expr.right.name == EMPTY_STRING:
-        return simplify(expr.left)
-
+      # ∅e => ∅
       if expr.left.name == EMPTY_LANGUAGE:
         return empty_language()
 
+      # e∅ => ∅
       if expr.right.name == EMPTY_LANGUAGE:
         return empty_language()
+
+      # εe => e
+      if expr.left.name == EMPTY_STRING:
+        return simplify(expr.right)
+
+      # eε => e
+      if expr.right.name == EMPTY_STRING:
+        return simplify(expr.left)
 
       return concat(simplify(expr.left), simplify(expr.right))
 
     case 'star':
+      # ∅* => ε
+      # ε* => ε
       if expr.left == EMPTY_STRING or expr.left == EMPTY_LANGUAGE:
         return empty_string()
 
       return star(simplify(expr.left))
+
+    case 'option':
+      # ∅? => ε
+      # ε? => ε
+
+      if expr.left == EMPTY_STRING or expr.left == EMPTY_LANGUAGE:
+        return empty_string()
+
+      return optional(simplify(expr.left))
 
     case _:
       return expr
@@ -238,9 +273,14 @@ def pretty(e: sexpr) -> str:
       return f"({pretty(e.left)}|{pretty(e.right)})"
     case 'star':
       inner = pretty(e.left)
-      if e.left.name == UNION:
+      if e.left.name != CONCAT:
         return f"{inner}*"
       return f"({inner})*"
+    case 'option':
+      inner = pretty(e.left)
+      if e.left.name != CONCAT:
+        return f"{inner}?"
+      return f"({inner})?"
     case _:
       return e.name
 
@@ -286,6 +326,32 @@ def test_pretty() -> None:
   )
   assert pretty(pre) == '(ba|(a|bb)(ab)*(b|aa))*', f"got: {pretty(pre)}"
 
+  pre = optional(
+    union(
+      literal('a'),
+      literal('b')
+    )
+  )
+  assert pretty(pre) == '(a|b)?', f"got: {pretty(pre)}"
+
+  pre = optional(
+    literal('a')
+  )
+  assert pretty(pre) == 'a?', f"got: {pretty(pre)}"
+
+  pre = star(
+    union(
+      literal('a'),
+      literal('b')
+    )
+  )
+  assert pretty(pre) == '(a|b)*', f"got: {pretty(pre)}"
+
+  pre = star(
+    literal('a')
+  )
+  assert pretty(pre) == 'a*', f"got: {pretty(pre)}"
+
 def test_opt() -> None:
   # (union (concat a b) (concat a b)) => (concat a b)
   pre = union(concat(literal('a'), literal('b')), concat(literal('a'), literal('b')))
@@ -311,7 +377,7 @@ def test_brzozowski() -> None:
       (2, 'a'): {0},
       (2, 'b'): {1}
     })
-  assert pretty(opt(ans)) == '(ba|(a|bb)(ab)*(b|aa))*'
+  assert pretty(opt(ans)) == '(ba|(a|bb)(ab)*(b|aa))*', f"got {pretty(opt(ans))}"
 
   ans = brzozowski(
     4,
@@ -326,6 +392,44 @@ def test_brzozowski() -> None:
     }
   )
   assert pretty(opt(ans)).replace('(0|1)', '.') == '.*(0.|.1)', f"got {pretty(opt(ans))}"
+
+  ans = brzozowski(
+    5,
+    '01',
+    {0,1,2},
+    {
+      (0,'0'): {0},
+      (0,'1'): {1},
+      (1,'0'): {0},
+      (1,'1'): {2},
+      (2,'0'): {2},
+      (2,'1'): {3},
+      (3,'0'): {2},
+      (3,'1'): {4},
+      (4,'0'): {4},
+      (4,'1'): {4},
+    }
+  )
+  assert pretty(opt(ans)) == '(0|10)*(1(1(0|10)*)?)?', f"got {pretty(opt(ans))}"
+
+  ans = brzozowski(
+    5,
+    '01',
+    {0,1,2},
+    {
+      (0,'0'): {0},
+      (0,'1'): {1},
+      (1,'0'): {0},
+      (1,'1'): {2},
+      (2,'0'): {3},
+      (2,'1'): {4},
+      (3,'0'): {3},
+      (3,'1'): {2},
+      (4,'0'): {4},
+      (4,'1'): {4},
+    }
+  )
+  assert pretty(opt(ans)) == '(0|10)*(1(1(00*1)*)?)?', f"got {pretty(opt(ans))}"
 
 def test() -> None:
   test_simplify()
