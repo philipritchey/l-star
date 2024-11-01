@@ -78,11 +78,11 @@ class Acceptor:
         # next state
         print(f'| {self.d[(q, a)]} ', end='')
       print()
-    print('REGEX')
-    print('=====')
-    ans = brzozowski(
-      len(self.Q),
-      alphabet,
-      self.F,
-      self.d)
-    print(opt(ans).pretty())
+    # print('REGEX')
+    # print('=====')
+    # ans = brzozowski(
+    #   len(self.Q),
+    #   alphabet,
+    #   self.F,
+    #   self.d)
+    # print(opt(ans).pretty())
