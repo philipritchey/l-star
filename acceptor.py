@@ -3,6 +3,7 @@ acceptor.py
 '''
 from my_types import State
 from helpers import compact
+from brzozowski import brzozowski, opt
 
 class Acceptor:
   '''
@@ -49,10 +50,13 @@ class Acceptor:
     '''
     print this DFA to standard output
     '''
-    alphabet = set()
+    print('DFA')
+    print('===')
+    alphabet_set = set()
     for state_str, _ in self.d.items():
       _, a = state_str
-      alphabet.add(a)
+      alphabet_set.add(a)
+    alphabet = str(''.join(sorted(alphabet_set)))
     print('state |', end='')
     for a in alphabet:
       print(f'| {a} ', end='')
@@ -74,3 +78,11 @@ class Acceptor:
         # next state
         print(f'| {self.d[(q, a)]} ', end='')
       print()
+    print('REGEX')
+    print('=====')
+    ans = brzozowski(
+      len(self.Q),
+      alphabet,
+      self.F,
+      self.d)
+    print(opt(ans).pretty())

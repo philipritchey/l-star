@@ -83,7 +83,7 @@ def l_star(A: Alphabet, teacher: Teacher) -> Acceptor:
 
 
 if __name__ == '__main__':
-  l_star('ab', HumanTeacher())
+  #l_star('ab', HumanTeacher())
 
   # l_star('01', HumanExamplesTeacher(
     # every 3rd symbol is 0
@@ -102,6 +102,7 @@ if __name__ == '__main__':
 
   # contains 00 exactly once
   # l_star('01', HumanLambdaTeacher(lambda string : string.find('00') >= 0 and string.find('00', string.find('00') + 1) == -1))
+
   # multiple of 3 0s
   # teacher = HumanLambdaTeacher(lambda string : string.count('0') % 3 == 0)
   # P: set[str] = {'000'}
@@ -111,3 +112,52 @@ if __name__ == '__main__':
   # print(f'{len(teacher.query_history)} queries')
   # for q in teacher.query_history:
   #   print(q)
+
+  # length at least 2 and does not end with 10
+  def fn(string: str) -> bool:
+    return len(string) >= 2 and not string.endswith('10')
+  P: set[str] = {
+    '100',
+    '101',
+    '11',
+    '1001',
+    '1011',
+    '111',
+    '01',
+    '1101',
+    '1111',
+    '1000',
+    '1100',
+    '00',
+    '10001',
+    '10000',
+    '10011'
+  }
+  N: set[str] = {
+    'λ',
+    '0',
+    '1',
+    '10',
+    '110',
+    '1010',
+    '1110',
+    '10010'
+  }
+  teacher = HumanLambdaExamplesTeacher(fn, P, N)
+  l_star('01', teacher)
+  print(f'{len(teacher.query_history)} queries')
+  print('++')
+  for q in teacher.query_history:
+    if q in P or fn(q):
+      print(q)
+  print('--')
+  for q in teacher.query_history:
+    if q in N or not fn(q):
+      print(q)
+
+  # for p in P:
+  #   if p not in teacher.query_history:
+  #     print(p, 'NOT USED')
+  # for n in N:
+  #   if n not in teacher.query_history:
+  #     print(n, 'NOT USED')

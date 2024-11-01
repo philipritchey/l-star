@@ -2,41 +2,13 @@
 brzozowski algebraic method
 '''
 
+from sexpr import sexpr
+
 STAR = 'star'
 UNION = 'union'
 CONCAT = 'concat'
 EMPTY_STRING = 'ε'
 EMPTY_LANGUAGE = '∅'
-
-class sexpr:
-  def __init__(self, name: str):
-    self.name: str = name
-    self.left: sexpr = None
-    self.right: sexpr = None
-
-  def __str__(self) -> str:
-    if not self.left:
-      return f"{self.name}"
-    if not self.right:
-      return f"({self.name} {self.left})"
-    return f"({self.name} {self.left} {self.right})"
-
-  def __eq__(self, other) -> bool:
-    return str(self) == str(other)
-
-  def pretty(self) -> str:
-    match self.name:
-      case 'concat':
-        return f"{self.left.pretty()}{self.right.pretty()}"
-      case 'union':
-        return f"({self.left.pretty()}|{self.right.pretty()})"
-      case 'star':
-        inner = self.left.pretty()
-        if self.left.name == UNION:
-          return f"{inner}*"
-        return f"({inner})*"
-      case _:
-        return self.name
 
 class literal(sexpr):
   def __init__(self, symbol: str):
@@ -170,7 +142,7 @@ def combine(symbols: list[str]) -> sexpr:
       m = int(n/2) + 1
       return union(combine(symbols[:m]), combine(symbols[m:]))
 
-def brzozowski(m: int, alphabet: str, final: set[int], trans: dict[tuple[int, str], int]) -> sexpr:
+def brzozowski(m: int, alphabet: str, final: set[int], trans: dict[tuple[int, str], set[int]]) -> sexpr:
   B: list[sexpr] = []
   for i in range(m):
     if i in final:
@@ -185,7 +157,7 @@ def brzozowski(m: int, alphabet: str, final: set[int], trans: dict[tuple[int, st
     for j in range(m):
       symbols = []
       for a in alphabet:
-        if (i, a) in trans and trans[(i, a)] == j:
+        if (i, a) in trans and j in trans[(i, a)]:
           symbols.append(a)
       A[i].append(combine(symbols))
   # print(f"[DEBUG] {A=}")
@@ -258,11 +230,25 @@ def opt(e: sexpr) -> sexpr:
   # print(f"[DEBUG] e2={e2}")
   return opt(e2)
 
+def pretty(e: sexpr) -> str:
+  match e.name:
+    case 'concat':
+      return f"{pretty(e.left)}{pretty(e.right)}"
+    case 'union':
+      return f"({pretty(e.left)}|{pretty(e.right)})"
+    case 'star':
+      inner = pretty(e.left)
+      if e.left.name == UNION:
+        return f"{inner}*"
+      return f"({inner})*"
+    case _:
+      return e.name
+
 def test_pretty() -> None:
   # (concat b a) => ba
   pre = concat(literal('b'), literal('a'))
   post = 'ba'
-  assert pre.pretty() == post, f"\n  actual: {pre.pretty()}\nexpected: {post}"
+  assert pretty(pre) == post, f"\n  actual: {pretty(pre)}\nexpected: {post}"
 
   # (star (union (concat b a) (concat (union a (concat b b)) (concat (star (concat a b)) (union b (concat a a))))))
   #   => (ba|(a|bb)(ab)*(b|aa))*
@@ -298,8 +284,7 @@ def test_pretty() -> None:
       )
     )
   )
-  post = '(ba|(a|bb)(ab)*(b|aa))*'
-  assert pre.pretty() == post, f"\n  actual: {pre.pretty()}\nexpected: {post}"
+  assert pretty(pre) == '(ba|(a|bb)(ab)*(b|aa))*', f"got: {pretty(pre)}"
 
 def test_opt() -> None:
   # (union (concat a b) (concat a b)) => (concat a b)
@@ -319,14 +304,28 @@ def test_brzozowski() -> None:
     'ab',  # alphabet
     {0},   # final states
     {      # transitions
-      (0, 'a'): 1,
-      (0, 'b'): 2,
-      (1, 'a'): 2,
-      (1, 'b'): 0,
-      (2, 'a'): 0,
-      (2, 'b'): 1
+      (0, 'a'): {1},
+      (0, 'b'): {2},
+      (1, 'a'): {2},
+      (1, 'b'): {0},
+      (2, 'a'): {0},
+      (2, 'b'): {1}
     })
-  assert opt(ans).pretty() == '(ba|(a|bb)(ab)*(b|aa))*'
+  assert pretty(opt(ans)) == '(ba|(a|bb)(ab)*(b|aa))*'
+
+  ans = brzozowski(
+    4,
+    '01',
+    {3},
+    {
+      (0,'0'): {0,1,2},
+      (0,'1'): {0,1},
+      (1,'1'): {3},
+      (2,'0'): {3},
+      (2,'1'): {3},
+    }
+  )
+  assert pretty(opt(ans)).replace('(0|1)', '.') == '.*(0.|.1)', f"got {pretty(opt(ans))}"
 
 def test() -> None:
   test_simplify()
