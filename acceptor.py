@@ -46,17 +46,27 @@ class Acceptor:
     '''
     return not self.accepts(string)
 
+  def get_alphabet(self) -> str:
+    '''
+    get the input alphabet
+
+    Returns:
+        str: input alphabet
+    '''
+    alphabet_set = set()
+    for state_str, _ in self.d.items():
+      _, a = state_str
+      alphabet_set.add(a)
+    return str(''.join(sorted(alphabet_set)))
+
   def print_acceptor(self) -> None:
     '''
     print this DFA to standard output
     '''
     print('DFA')
     print('===')
-    alphabet_set = set()
-    for state_str, _ in self.d.items():
-      _, a = state_str
-      alphabet_set.add(a)
-    alphabet = str(''.join(sorted(alphabet_set)))
+    alphabet = self.get_alphabet()
+    # TODO(pcr): map states to 0..n before printing
     print('state |', end='')
     for a in alphabet:
       print(f'| {a} ', end='')
