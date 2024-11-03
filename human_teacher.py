@@ -10,8 +10,12 @@ class HumanTeacher(Teacher):
   '''
   A minimally adequate human teacher
   '''
+  def __init__(self):
+    self.query_history: list[str] = []
+
   def membership_query(self, string: str) -> bool:
     response = input(f'(y/n) is {string} in the language? ')
+    self.query_history.append(string)
     return response.lower()[0] == 'y'
 
   def respond_to_conjecture(self, conjecture: Acceptor) -> Optional[str]:
