@@ -4,90 +4,128 @@ from Learning Regular Sets from Queries and Counterexamples
 by Dana Angluin
 '''
 
-
+import sys
 from human_teacher import HumanTeacher
 from human_examples_teacher import HumanExamplesTeacher
 from human_lambda_teacher import HumanLambdaTeacher
 from human_lambda_examples_teacher import HumanLambdaExamplesTeacher
-from teacher import Teacher
-from my_types import Alphabet
-from obervation_table import ObservationTable
-from acceptor import Acceptor
-from helpers import prefixes
+from examples_teacher import ExamplesTeacher
+from l_star import l_star
 
-def l_star(A: Alphabet, teacher: Teacher) -> Acceptor:
+def inflate(example: str, alphabet: str) -> list[str]:
   '''
-  learn a regular language
+  replace each X with a in alphabet
+
+  Args:
+    example (set[str]): example to inflate
+    alphabet (str): alphabet to use
+
+  Returns:
+    list[str]: inflated examples
   '''
+  if 'X' not in example:
+    return [example]
+  inflated_examples = []
+  for a in alphabet:
+    es = inflate(example.replace('X', a, 1), alphabet)
+    inflated_examples.extend(es)
+  return inflated_examples
 
-  # construct the initial obervation table (S,E,T)
-  #   (T is a finite function mapping (S U S*A) * E) to {0,1})
-  # initialize S and E to {λ}
-  table = ObservationTable(A)
+def inflate_all(example_set: set[str], alphabet: str) -> set[str]:
+  '''
+  replace each X with a in alphabet
 
-  # ask membership queries for λ and each a in A
-  table.init(teacher)
-  # print(f'[DEBUG] table.T = {table.T}')
+  Args:
+    example_set (set[str]): examples to inflate
+    alphabet (str): alphabet to use
 
-  # repeat until Teacher replies yes to conjecture m
-  M = None
-  while M is None:
-    # table.print_table()
-    is_closed = table.closed()
-    is_consistent = table.consistent()
-    while not is_closed or not is_consistent:
-      if not is_consistent:
-        # print('[INFO] is NOT consistent')
-        # find s1, s2 in S, a in A, and e in E such that
-        #   row(s1) = row(s2) and T(s1*a*e) != T(s2*a*e)
-        ae = table.find_not_consistent()
-        # add ae to E
-        # print(f'add {ae} to E')
-        table.add_to_E(ae)
-        # extend T to (S U S*A) * E using membership queries
-        table.extend(teacher)
-      # else:
-        # print('[INFO] is consistent')
-      if not is_closed:
-        # print('[INFO] is NOT closed')
-        # find s1 in S and a in A such that
-        #   row(s1*a) is different from row(s) for all s in S
-        s1a = table.find_not_closed()
-        # print(f'[INFO] row({s1a}) is different from all row(s)')
-        # add s1a to S
-        # print(f'add {s1a} to S')
-        table.add_to_S(f'{s1a}')
-        # extend T to (S U S*A) * E using membership queries
-        table.extend(teacher)
-      # else:
-        # print('[INFO] is closed')
-      # table.print_table()
-      is_closed = table.closed()
-      is_consistent = table.consistent()
+  Returns:
+    set[str]: inflated set of examples
+  '''
+  s: set[str] = set()
+  for example in example_set:
+    inflated_examples = inflate(example, alphabet)
+    for e in inflated_examples:
+      s.add(e)
+  return s
 
-    # (S,E,T) is now closed and consistent
-    # make the conjecture
-    M = table.to_acceptor()
-    t = teacher.respond_to_conjecture(M)
-    # if the teacher replies with a counterexample t, then
-    if t is not None:
-      # add t and all its (non-empty) prefixes to S
-      for p in prefixes(t):
-        # print(f'[DEBUG] add {p} to S')
-        table.add_to_S(p)
-      # extend T to (S U S*A) * E using membership queries
-      table.extend(teacher)
-      M = None
-    # else halt and output m
-  return M
+def read_examples(examples_file: str) -> dict[str, set[str]]:
+  '''
+  read examples
 
+  Args:
+      examples_file (str): path to examples file
+
+  Returns:
+      dict[str, set[str]]: P: positive examples, N: negative examples
+  '''
+  examples: dict[str, set[str]] = {}
+  examples['P'] = set()
+  examples['N'] = set()
+  with open(examples_file, 'r', encoding="utf-8") as f:
+    description = f.readline().strip()
+    print(description)
+    active_set = examples['P']
+    for line in f:
+      line = line.strip()
+      if line == '++':
+        active_set = examples['P']
+      elif line == '--':
+        active_set = examples['N']
+      else:
+        # empty string -> λ
+        if len(line) == 0:
+          line = 'λ'
+        active_set.add(line)
+  return examples
+
+def get_alphabet(examples: dict[str, set[str]]) -> str:
+  '''
+  get the alphabet
+
+  Args:
+      examples (dict[str, set[str]]): positive and negative examples
+
+  Returns:
+      str: string of symbols
+  '''
+  alphabet: set[str] = set()
+  for example in examples['P'].union(examples['N']):
+    for symbol in example:
+      alphabet.add(symbol)
+  alphabet.discard('X')
+  alphabet.discard('λ')
+  return str(''.join(sorted(alphabet)))
 
 if __name__ == '__main__':
-  teacher = HumanTeacher()
-  P: set[str] = set()
-  N: set[str] = set()
-  def fn(string: str) -> bool:
-    return False
+  if len(sys.argv) == 1:
+    print('error: missing required examples filename')
+    sys.exit(1)
+  EXAMPLES = read_examples(sys.argv[-1])
+  ALPHABET = get_alphabet(EXAMPLES)
+  # print(f"{ALPHABET=}")
+  EXAMPLES['P'] = inflate_all(EXAMPLES['P'], ALPHABET)
+  EXAMPLES['N'] = inflate_all(EXAMPLES['N'], ALPHABET)
+  # print(f"{EXAMPLES=}")
+  TEACHER = ExamplesTeacher(EXAMPLES)
+
+  ACCEPTOR = l_star(ALPHABET, TEACHER)
+  print(f'{len(TEACHER.query_history)} queries')
+  print('++')
+  for q in TEACHER.query_history:
+    if ACCEPTOR.accepts(q):
+      print(q)
+  print('--')
+  for q in TEACHER.query_history:
+    if ACCEPTOR.rejects(q):
+      print(q)
+  ACCEPTOR.print_acceptor()
+
+  # teacher = HumanTeacher()
+  # P: set[str] = set()
+  # N: set[str] = set()
+  # def fn(string: str) -> bool:
+  #   return False
 
   # l_star('01', HumanExamplesTeacher(
     # every 3rd symbol is 0
@@ -317,29 +355,29 @@ if __name__ == '__main__':
   # }
 
   # mystery 14 / no29
-  P: set[str] = {
-    'λ',
-    '00'
-  }
-  N: set[str] = {
-    '0',
-    '1',
-    '01'
-  }
+  # P: set[str] = {
+  #   'λ',
+  #   '00'
+  # }
+  # N: set[str] = {
+  #   '0',
+  #   '1',
+  #   '01'
+  # }
 
   # teacher = HumanLambdaExamplesTeacher(fn, P, N)
-  teacher = HumanExamplesTeacher(P, N)
+  # teacher = HumanExamplesTeacher(P, N)
 
-  acceptor = l_star('01', teacher)
-  print(f'{len(teacher.query_history)} queries')
-  print('++')
-  for q in teacher.query_history:
-    if acceptor.accepts(q):
-      print(q)
-  print('--')
-  for q in teacher.query_history:
-    if acceptor.rejects(q):
-      print(q)
+  # acceptor = l_star('01', teacher)
+  # print(f'{len(teacher.query_history)} queries')
+  # print('++')
+  # for q in teacher.query_history:
+  #   if acceptor.accepts(q):
+  #     print(q)
+  # print('--')
+  # for q in teacher.query_history:
+  #   if acceptor.rejects(q):
+  #     print(q)
 
   # for p in P:
   #   if p not in teacher.query_history:
