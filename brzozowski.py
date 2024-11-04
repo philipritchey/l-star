@@ -8,6 +8,7 @@ EMPTY_LANGUAGE = '∅'
 EMPTY_STRING = 'ε'
 CONCAT = 'concat'
 OPTIONAL = 'option'
+SOME = 'some'
 STAR = 'star'
 UNION = 'union'
 
@@ -36,6 +37,11 @@ class star(sexpr):
 class optional(sexpr):
   def __init__(self, child: sexpr):
     sexpr.__init__(self, OPTIONAL)
+    self.left = child
+
+class some(sexpr):
+  def __init__(self, child: sexpr):
+    sexpr.__init__(self, SOME)
     self.left = child
 
 class empty_string(sexpr):
@@ -101,11 +107,6 @@ def simplify(expr: sexpr) -> sexpr:
       if expr.left == expr.right:
         return simplify(expr.left)
 
-      # ((e|f)|g) => (e|(f|g))
-      if expr.left.name == 'union':
-        e, f, g = expr.left.left, expr.left.right, expr.right
-        return simplify(union(e, union(f, g)))
-
       # (∅|e) => e
       if expr.left.name == EMPTY_LANGUAGE:
         return simplify(expr.right)
@@ -122,14 +123,35 @@ def simplify(expr: sexpr) -> sexpr:
       if expr.right.name == EMPTY_STRING:
         return simplify(optional(expr.left))
 
+      # (e|fe) => f?e
+      # (e|ef) => ef?
+      if expr.right.name == 'concat':
+        if expr.left == expr.right.right:
+          return simplify(concat(optional(expr.right.left), expr.left))
+        if expr.left == expr.right.left:
+          return simplify(concat(expr.left, optional(expr.right.right)))
+
+      # (fe|e) => f?e
+      # (ef|e) => ef?
+      if expr.left.name == 'concat':
+        if expr.right == expr.left.right:
+          return simplify(concat(optional(expr.left.left), expr.right))
+        if expr.right == expr.left.left:
+          return simplify(concat(expr.right, optional(expr.left.right)))
+
+      # TODO
+      # (e+|e*) => e*
+      # (e+|e?) => e*
+      # (e*|e?) => e*
+
+      # ((e|f)|g) => (e|(f|g))
+      if expr.left.name == 'union':
+        e, f, g = expr.left.left, expr.left.right, expr.right
+        return simplify(union(e, union(f, g)))
+
       return union(simplify(expr.left), simplify(expr.right))
 
     case 'concat':
-      # (ef)g => e(fg)
-      if expr.left.name == 'concat':
-        e, f, g = expr.left.left, expr.left.right, expr.right
-        return simplify(concat(e, concat(f, g)))
-
       # ∅e => ∅
       if expr.left.name == EMPTY_LANGUAGE:
         return empty_language()
@@ -146,12 +168,31 @@ def simplify(expr: sexpr) -> sexpr:
       if expr.right.name == EMPTY_STRING:
         return simplify(expr.left)
 
+      # ee* = e*e => e+
+      if expr.right.name == 'star' and expr.right.left == expr.left:
+        return some(simplify(expr.left))
+      if expr.left.name == 'star' and expr.left.left == expr.right:
+        return some(simplify(expr.right))
+
+      # e*e* => e*
+      if expr.left.name == 'star' and expr.left == expr.right:
+        return simplify(expr.left)
+
+      # e+e+ => ee+
+      if expr.left.name == 'some' and expr.left == expr.right:
+        return simplify(concat(expr.left.left, expr.right))
+
+      # (ef)g => e(fg)
+      if expr.left.name == 'concat':
+        e, f, g = expr.left.left, expr.left.right, expr.right
+        return simplify(concat(e, concat(f, g)))
+
       return concat(simplify(expr.left), simplify(expr.right))
 
     case 'star':
       # ∅* => ε
       # ε* => ε
-      if expr.left == EMPTY_STRING or expr.left == EMPTY_LANGUAGE:
+      if expr.left.name == EMPTY_STRING or expr.left.name == EMPTY_LANGUAGE:
         return empty_string()
 
       return star(simplify(expr.left))
@@ -159,11 +200,31 @@ def simplify(expr: sexpr) -> sexpr:
     case 'option':
       # ∅? => ε
       # ε? => ε
-
-      if expr.left == EMPTY_STRING or expr.left == EMPTY_LANGUAGE:
+      if expr.left.name == EMPTY_STRING or expr.left.name == EMPTY_LANGUAGE:
         return empty_string()
 
       return optional(simplify(expr.left))
+
+    case 'some':
+      # ∅+ => ∅
+      if expr.left.name == EMPTY_LANGUAGE:
+        return empty_language()
+
+      # ε+ => ε
+      if expr.left.name == EMPTY_STRING:
+        return empty_string()
+
+      # (e+)+ => e+
+      if expr.left.name == 'some':
+        return simplify(expr.left)
+
+      # (e*)+ => e*
+      if expr.left.name == 'star':
+        return simplify(expr.left)
+
+      # (e?)+ => e*
+      if expr.left.name == 'option':
+        return simplify(star(expr.left.left))
 
     case _:
       return expr
@@ -191,6 +252,11 @@ def pretty(e: sexpr) -> str:
       if e.left.name != CONCAT:
         return f"{inner}?"
       return f"({inner})?"
+    case 'some':
+      inner = pretty(e.left)
+      if e.left.name != CONCAT:
+        return f"{inner}+"
+      return f"({inner})+"
     case _:
       return e.name
 
