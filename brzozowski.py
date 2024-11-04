@@ -226,6 +226,8 @@ def simplify(expr: sexpr) -> sexpr:
       if expr.left.name == 'option':
         return simplify(star(expr.left.left))
 
+      return some(simplify(expr.left))
+
     case _:
       return expr
 
@@ -339,6 +341,21 @@ def test_simplify() -> None:
   pre = union(concat(literal('a'), literal('b')), concat(literal('a'), literal('b')))
   post = concat(literal('a'), literal('b'))
   assert simplify(pre) == post
+
+  # 00* => 0+
+  pre = concat(literal('0'), star(literal('0')))
+  post = some(literal('0'))
+  assert simplify(pre) == post, f"got: {simplify(pre)}"
+
+  # 0(0*1) => 0+1
+  pre = concat(literal('0'), concat(star(literal('0')), literal('1')))
+  post = concat(some(literal('0')), literal('1'))
+  assert simplify(pre) == post, f"got: {simplify(pre)}"
+
+  # (1|00*1)* => (1|0+1)* => ((empty|0+)1)* => ((0+)?1)* => (0*1)*
+  pre = star(union(literal('1'), concat(literal('0'), concat(star(literal('0')), literal('1')))))
+  post = star(concat(star(literal('0')), literal('1')))
+  assert simplify(pre) == post, f"got: {simplify(pre)}"
 
 def test_brzozowski() -> None:
   ans = brzozowski(
