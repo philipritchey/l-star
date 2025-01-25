@@ -97,29 +97,52 @@ def get_alphabet(examples: dict[str, set[str]]) -> str:
   alphabet.discard('λ')
   return str(''.join(sorted(alphabet)))
 
-if __name__ == '__main__':
-  if len(sys.argv) == 1:
-    print('error: missing required examples filename')
-    sys.exit(1)
-  EXAMPLES = read_examples(sys.argv[-1])
-  ALPHABET = get_alphabet(EXAMPLES)
-  # print(f"{ALPHABET=}")
-  EXAMPLES['P'] = inflate_all(EXAMPLES['P'], ALPHABET)
-  EXAMPLES['N'] = inflate_all(EXAMPLES['N'], ALPHABET)
+def use_examples_teacher(examples_file):
+  examples = read_examples(examples_file)
+  alphabet = get_alphabet(examples)
+  # print(f"{alphabet=}")
+  examples['P'] = inflate_all(examples['P'], alphabet)
+  examples['N'] = inflate_all(examples['N'], alphabet)
   # print(f"{EXAMPLES=}")
-  TEACHER = ExamplesTeacher(EXAMPLES)
+  return alphabet, ExamplesTeacher(examples)
 
-  ACCEPTOR = l_star(ALPHABET, TEACHER)
-  print(f'{len(TEACHER.query_history)} queries')
+def use_lambda_examples_teacher(membership, examples_file):
+  examples = read_examples(examples_file)
+  alphabet = get_alphabet(examples)
+  # print(f"{alphabet=}")
+  examples['P'] = inflate_all(examples['P'], alphabet)
+  examples['N'] = inflate_all(examples['N'], alphabet)
+  # print(f"{EXAMPLES=}")
+  return alphabet, HumanLambdaExamplesTeacher(membership, examples)
+
+def print_acceptor(teacher, acceptor):
+  print(f'{len(teacher.query_history)} queries')
   print('++')
-  for q in TEACHER.query_history:
-    if ACCEPTOR.accepts(q):
+  for q in teacher.query_history:
+    if acceptor.accepts(q):
       print(q)
   print('--')
-  for q in TEACHER.query_history:
-    if ACCEPTOR.rejects(q):
+  for q in teacher.query_history:
+    if acceptor.rejects(q):
       print(q)
-  ACCEPTOR.print_acceptor()
+  acceptor.print_acceptor()
+
+if __name__ == '__main__':
+  # if len(sys.argv) == 1:
+  #   print('error: missing required examples filename')
+  #   sys.exit(1)
+
+  # examples_file = sys.argv[-1]
+
+  # ALPHABET, TEACHER = use_examples_teacher(examples_file)
+
+  def starts_and_ends_with_11(string: str) -> bool:
+    return string.startswith('11') and string.endswith('11')
+  ALPHABET, TEACHER = use_lambda_examples_teacher(starts_and_ends_with_11, 'examples/starts_and_ends_with_11')
+
+  ACCEPTOR = l_star(ALPHABET, TEACHER)
+
+  print_acceptor(TEACHER, ACCEPTOR)
 
   # teacher = HumanTeacher()
   # P: set[str] = set()

@@ -2,7 +2,6 @@
 ExamplesTeacher
 '''
 
-from random import choice
 from typing import Optional
 from teacher import Teacher
 from acceptor import Acceptor

@@ -12,10 +12,10 @@ class HumanLambdaExamplesTeacher(Teacher):
   '''
   A minimally adequate teacher with a membership function and examples, backed up by a human
   '''
-  def __init__(self, membership: Callable[[str], bool], positive_examples: set[str], negative_examples: set[str]):
+  def __init__(self, membership: Callable[[str], bool], examples: dict[str, set[str]]):
     self.membership = membership
-    self.positive_examples: set[str] = set(positive_examples)
-    self.negative_examples: set[str] = set(negative_examples)
+    self.positive_examples: set[str] = examples['P']
+    self.negative_examples: set[str] = examples['N']
     self.human = HumanTeacher()
     self.query_history: list[str] = []
 
