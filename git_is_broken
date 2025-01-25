@@ -1,0 +1,9 @@
+if you see something like this:
+error: object file .git/objects/c6/b1a94f61d5f00f27c73760f4aae79e754490f1 is empty
+error: object file .git/objects/c6/b1a94f61d5f00f27c73760f4aae79e754490f1 is empty
+fatal: loose object c6b1a94f61d5f00f27c73760f4aae79e754490f1 (stored in .git/objects/c6/b1a94f61d5f00f27c73760f4aae79e754490f1) is corrupt
+
+do this:
+find .git/objects/ -type f -empty -delete
+git fetch -p
+git fsck --full
