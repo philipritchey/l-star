@@ -79,7 +79,7 @@ class Acceptor:
     for a in alphabet:
       print(f'| {a} ', end='')
     print()
-    print('------++---+---')
+    print(f"------+{'+---'*len(alphabet)}")
     for q in states:
       q_i = states.index(q)
       t = ''
