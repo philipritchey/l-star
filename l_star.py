@@ -4,6 +4,7 @@ from Learning Regular Sets from Queries and Counterexamples
 by Dana Angluin
 '''
 
+from sys import argv
 from teacher import Teacher
 from human_teacher import HumanTeacher
 from my_types import Alphabet
@@ -79,6 +80,8 @@ def l_star(A: Alphabet, teacher: Teacher) -> Acceptor:
 
 if __name__ == '__main__':
   ALPHABET = '01'
+  if len(argv) > 1:
+    ALPHABET = argv[1]
   TEACHER = HumanTeacher()
 
   ACCEPTOR = l_star(ALPHABET, TEACHER)
