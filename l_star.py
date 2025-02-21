@@ -12,7 +12,7 @@ from obervation_table import ObservationTable
 from acceptor import Acceptor
 from helpers import prefixes
 
-def l_star(A: Alphabet, teacher: Teacher) -> Acceptor:
+def l_star(alphabet: Alphabet, teacher: Teacher) -> Acceptor:
   '''
   learn a regular language
   '''
@@ -20,7 +20,7 @@ def l_star(A: Alphabet, teacher: Teacher) -> Acceptor:
   # construct the initial obervation table (S,E,T)
   #   (T is a finite function mapping (S U S*A) * E) to {0,1})
   # initialize S and E to {λ}
-  table = ObservationTable(A)
+  table = ObservationTable(alphabet)
 
   # ask membership queries for λ and each a in A
   table.init(teacher)

@@ -10,6 +10,8 @@ from human_examples_teacher import HumanExamplesTeacher
 from human_lambda_teacher import HumanLambdaTeacher
 from human_lambda_examples_teacher import HumanLambdaExamplesTeacher
 from examples_teacher import ExamplesTeacher
+from lambda_teacher import LambdaTeacher
+from lambda_examples_teacher import LambdaExamplesTeacher
 from l_star import l_star
 
 def inflate(example: str, alphabet: str) -> list[str]:
@@ -136,9 +138,18 @@ if __name__ == '__main__':
 
   # ALPHABET, TEACHER = use_examples_teacher(examples_file)
 
-  def starts_and_ends_with_11(string: str) -> bool:
-    return string.startswith('11') and string.endswith('11')
-  ALPHABET, TEACHER = use_lambda_examples_teacher(starts_and_ends_with_11, 'examples/starts_and_ends_with_11')
+  # def starts_and_ends_with_11(string: str) -> bool:
+  #   return string.startswith('11') and string.endswith('11')
+  # ALPHABET, TEACHER = use_lambda_examples_teacher(starts_and_ends_with_11, 'examples/starts_and_ends_with_11')
+
+  def second_symbol_1(string: str) -> bool:
+    return len(string) > 1 and string[1] == '1'
+  ALPHABET = '01'
+  EXAMPLES = {
+    'P': {'01', '11', '010', '011', '110', '111'},
+    'N': {'λ', '0', '1', '00' '10', '000', '001', '100', '101'}
+  }
+  TEACHER = LambdaExamplesTeacher(second_symbol_1, EXAMPLES)
 
   ACCEPTOR = l_star(ALPHABET, TEACHER)
 
