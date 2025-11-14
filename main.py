@@ -13,6 +13,10 @@ from examples_teacher import ExamplesTeacher
 from lambda_teacher import LambdaTeacher
 from lambda_examples_teacher import LambdaExamplesTeacher
 from l_star import l_star
+from pathlib import Path
+from collections.abc import Callable
+from teacher import Teacher
+from acceptor import Acceptor
 
 def inflate(example: str, alphabet: str) -> list[str]:
   '''
@@ -27,7 +31,7 @@ def inflate(example: str, alphabet: str) -> list[str]:
   '''
   if 'X' not in example:
     return [example]
-  inflated_examples = []
+  inflated_examples: list[str] = []
   for a in alphabet:
     es = inflate(example.replace('X', a, 1), alphabet)
     inflated_examples.extend(es)
@@ -51,7 +55,7 @@ def inflate_all(example_set: set[str], alphabet: str) -> set[str]:
       s.add(e)
   return s
 
-def read_examples(examples_file: str) -> dict[str, set[str]]:
+def read_examples(examples_file: Path) -> dict[str, set[str]]:
   '''
   read examples
 
@@ -99,7 +103,7 @@ def get_alphabet(examples: dict[str, set[str]]) -> str:
   alphabet.discard('λ')
   return str(''.join(sorted(alphabet)))
 
-def use_examples_teacher(examples_file):
+def use_examples_teacher(examples_file: Path):
   examples = read_examples(examples_file)
   alphabet = get_alphabet(examples)
   # print(f"{alphabet=}")
@@ -108,7 +112,7 @@ def use_examples_teacher(examples_file):
   # print(f"{EXAMPLES=}")
   return alphabet, ExamplesTeacher(examples)
 
-def use_lambda_examples_teacher(membership, examples_file):
+def use_lambda_examples_teacher(membership: Callable[[str], bool], examples_file: Path):
   examples = read_examples(examples_file)
   alphabet = get_alphabet(examples)
   # print(f"{alphabet=}")
@@ -117,14 +121,14 @@ def use_lambda_examples_teacher(membership, examples_file):
   # print(f"{EXAMPLES=}")
   return alphabet, HumanLambdaExamplesTeacher(membership, examples)
 
-def print_acceptor(teacher, acceptor):
-  print(f'{len(teacher.query_history)} queries')
+def print_acceptor(teacher: Teacher, acceptor: Acceptor):
+  print(f'{len(teacher.query_history())} queries')
   print('++')
-  for q in teacher.query_history:
+  for q in teacher.query_history():
     if acceptor.accepts(q):
       print(q)
   print('--')
-  for q in teacher.query_history:
+  for q in teacher.query_history():
     if acceptor.rejects(q):
       print(q)
   acceptor.print_acceptor()

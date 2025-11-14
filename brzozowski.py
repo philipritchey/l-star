@@ -78,7 +78,7 @@ def brzozowski(m: int, alphabet: str, final: set[int], trans: dict[tuple[int, st
   for i in range(m):
     A.append([])
     for j in range(m):
-      symbols = []
+      symbols: list[str] = []
       for a in alphabet:
         if (i, a) in trans and j in trans[(i, a)]:
           symbols.append(a)
@@ -100,9 +100,14 @@ def brzozowski(m: int, alphabet: str, final: set[int], trans: dict[tuple[int, st
 
   return B[0]
 
-def simplify(expr: sexpr) -> sexpr:
+def simplify(expr: sexpr | None) -> sexpr:
+  if expr is None:
+    return sexpr(EMPTY_LANGUAGE)
   match expr.name:
     case 'union':
+      assert isinstance(expr.left, sexpr)
+      assert isinstance(expr.right, sexpr)
+
       # (e|e) => e
       if expr.left == expr.right:
         return simplify(expr.left)
@@ -127,16 +132,20 @@ def simplify(expr: sexpr) -> sexpr:
       # (e|ef) => ef?
       if expr.right.name == 'concat':
         if expr.left == expr.right.right:
+          assert isinstance(expr.right.left, sexpr)
           return simplify(concat(optional(expr.right.left), expr.left))
         if expr.left == expr.right.left:
+          assert isinstance(expr.right.right, sexpr)
           return simplify(concat(expr.left, optional(expr.right.right)))
 
       # (fe|e) => f?e
       # (ef|e) => ef?
       if expr.left.name == 'concat':
         if expr.right == expr.left.right:
+          assert isinstance(expr.left.left, sexpr)
           return simplify(concat(optional(expr.left.left), expr.right))
         if expr.right == expr.left.left:
+          assert isinstance(expr.left.right, sexpr)
           return simplify(concat(expr.right, optional(expr.left.right)))
 
       # TODO
@@ -147,11 +156,17 @@ def simplify(expr: sexpr) -> sexpr:
       # ((e|f)|g) => (e|(f|g))
       if expr.left.name == 'union':
         e, f, g = expr.left.left, expr.left.right, expr.right
+        assert isinstance(e, sexpr)
+        assert isinstance(f, sexpr)
+        assert isinstance(g, sexpr)
         return simplify(union(e, union(f, g)))
 
       return union(simplify(expr.left), simplify(expr.right))
 
     case 'concat':
+      assert isinstance(expr.left, sexpr)
+      assert isinstance(expr.right, sexpr)
+
       # ∅e => ∅
       if expr.left.name == EMPTY_LANGUAGE:
         return empty_language()
@@ -180,16 +195,21 @@ def simplify(expr: sexpr) -> sexpr:
 
       # e+e+ => ee+
       if expr.left.name == 'some' and expr.left == expr.right:
+        assert isinstance(expr.left.left, sexpr)
         return simplify(concat(expr.left.left, expr.right))
 
       # (ef)g => e(fg)
       if expr.left.name == 'concat':
         e, f, g = expr.left.left, expr.left.right, expr.right
+        assert isinstance(e, sexpr)
+        assert isinstance(f, sexpr)
+        assert isinstance(g, sexpr)
         return simplify(concat(e, concat(f, g)))
 
       return concat(simplify(expr.left), simplify(expr.right))
 
     case 'star':
+      assert isinstance(expr.left, sexpr)
       # ∅* => ε
       # ε* => ε
       if expr.left.name == EMPTY_STRING or expr.left.name == EMPTY_LANGUAGE:
@@ -198,6 +218,7 @@ def simplify(expr: sexpr) -> sexpr:
       return star(simplify(expr.left))
 
     case 'option':
+      assert isinstance(expr.left, sexpr)
       # ∅? => ε
       # ε? => ε
       if expr.left.name == EMPTY_STRING or expr.left.name == EMPTY_LANGUAGE:
@@ -206,6 +227,7 @@ def simplify(expr: sexpr) -> sexpr:
       return optional(simplify(expr.left))
 
     case 'some':
+      assert isinstance(expr.left, sexpr)
       # ∅+ => ∅
       if expr.left.name == EMPTY_LANGUAGE:
         return empty_language()
@@ -224,6 +246,7 @@ def simplify(expr: sexpr) -> sexpr:
 
       # (e?)+ => e*
       if expr.left.name == 'option':
+        assert isinstance(expr.left.left, sexpr)
         return simplify(star(expr.left.left))
 
       return some(simplify(expr.left))
@@ -238,29 +261,34 @@ def opt(e: sexpr) -> sexpr:
   # print(f"[DEBUG] e2={e2}")
   return opt(e2)
 
-def pretty(e: sexpr) -> str:
-  match e.name:
+def pretty(expr: sexpr | None) -> str:
+  if expr is None:
+    return ''
+  match expr.name:
     case 'concat':
-      return f"{pretty(e.left)}{pretty(e.right)}"
+      return f"{pretty(expr.left)}{pretty(expr.right)}"
     case 'union':
-      return f"({pretty(e.left)}|{pretty(e.right)})"
+      return f"({pretty(expr.left)}|{pretty(expr.right)})"
     case 'star':
-      inner = pretty(e.left)
-      if e.left.name != CONCAT:
+      assert isinstance(expr.left, sexpr)
+      inner = pretty(expr.left)
+      if expr.left.name != CONCAT:
         return f"{inner}*"
       return f"({inner})*"
     case 'option':
-      inner = pretty(e.left)
-      if e.left.name != CONCAT:
+      assert isinstance(expr.left, sexpr)
+      inner = pretty(expr.left)
+      if expr.left.name != CONCAT:
         return f"{inner}?"
       return f"({inner})?"
     case 'some':
-      inner = pretty(e.left)
-      if e.left.name != CONCAT:
+      assert isinstance(expr.left, sexpr)
+      inner = pretty(expr.left)
+      if expr.left.name != CONCAT:
         return f"{inner}+"
       return f"({inner})+"
     case _:
-      return e.name
+      return expr.name
 
 def test_pretty() -> None:
   # (concat b a) => ba

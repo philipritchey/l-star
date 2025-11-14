@@ -28,8 +28,17 @@ class Teacher(ABC):
     ask the teacher to verify a conjectured acceptor
 
     Args:
-        conjecture (Acceptor): the acceptor in question
+      conjecture (Acceptor): the acceptor in question
 
     Returns:
-        Optional[str]: a counterexample if the conjecture is incorrect or None otherwise
+      Optional[str]: a counterexample if the conjecture is incorrect or None otherwise
+    '''
+
+  @abstractmethod
+  def query_history(self) -> list[str]:
+    '''
+    get the query history
+
+    Returns:
+      list[str]: a list of queries in the order they were asked
     '''

@@ -15,11 +15,11 @@ class LambdaExamplesTeacher(Teacher):
     self.membership = membership
     self.positive_examples: set[str] = examples['P']
     self.negative_examples: set[str] = examples['N']
-    self.query_history: list[str] = []
+    self._query_history: list[str] = []
 
   def membership_query(self, string: str) -> bool:
     answer = self.membership(string)
-    self.query_history.append(string)
+    self._query_history.append(string)
     # print(f'[DEBUG] query: {string} -> {"accept" if answer else "reject"}')
     return answer
 
@@ -34,3 +34,6 @@ class LambdaExamplesTeacher(Teacher):
         return p
     # accept
     return None
+  
+  def query_history(self) -> list[str]:
+    return self._query_history

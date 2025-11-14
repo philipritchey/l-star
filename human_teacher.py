@@ -11,11 +11,11 @@ class HumanTeacher(Teacher):
   A minimally adequate human teacher
   '''
   def __init__(self):
-    self.query_history: list[str] = []
+    self._query_history: list[str] = []
 
   def membership_query(self, string: str) -> bool:
     response = input(f'(y/n) is {string} in the language? ')
-    self.query_history.append(string)
+    self._query_history.append(string)
     return response.lower()[0] == 'y'
 
   def respond_to_conjecture(self, conjecture: Acceptor) -> Optional[str]:
@@ -25,3 +25,7 @@ class HumanTeacher(Teacher):
     if response.lower()[0] != 'y':
       counterexample = input('give me a counterexample: ')
     return counterexample
+  
+  def query_history(self) -> list[str]:
+    return self._query_history
+  

@@ -15,10 +15,10 @@ class HumanExamplesTeacher(Teacher):
     self.P: set[str] = set(P)
     self.N: set[str] = set(N)
     self.human = HumanTeacher()
-    self.query_history: list[str] = []
+    self._query_history: list[str] = []
 
   def membership_query(self, string: str) -> bool:
-    self.query_history.append(string)
+    self._query_history.append(string)
     if string in self.P:
       # print(f'[DEBUG] query: {string} -> accept')
       return True
@@ -43,3 +43,6 @@ class HumanExamplesTeacher(Teacher):
         # print(f'[DEBUG] conjecture rejected: failed to accept {p}')
         return p
     return self.human.respond_to_conjecture(conjecture)
+
+  def query_history(self) -> list[str]:
+    return self._query_history

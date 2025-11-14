@@ -14,11 +14,11 @@ class ExamplesTeacher(Teacher):
   def __init__(self, examples: dict[str, set[str]]):
     self.positives: set[str] = examples['P']
     self.negatives: set[str] = examples['N']
-    self.query_history: list[str] = []
+    self._query_history: list[str] = []
     self.human = HumanTeacher()
 
   def membership_query(self, string: str) -> bool:
-    self.query_history.append(string)
+    self._query_history.append(string)
     if string in self.positives:
       print(f'[DEBUG] query: {string} -> accept')
       return True
@@ -47,3 +47,6 @@ class ExamplesTeacher(Teacher):
         return p
     # accepts all p in P, rejects all n in N -> "correct"
     return None  # None -> no counterexample -> "correct"
+
+  def query_history(self) -> list[str]:
+    return self._query_history

@@ -79,19 +79,17 @@ def l_star(alphabet: Alphabet, teacher: Teacher) -> Acceptor:
   return M
 
 if __name__ == '__main__':
-  ALPHABET = '01'
-  if len(argv) > 1:
-    ALPHABET = argv[1]
+  ALPHABET = argv[1] if len(argv) > 1 else '01'
   TEACHER = HumanTeacher()
 
   ACCEPTOR = l_star(ALPHABET, TEACHER)
-  print(f'{len(TEACHER.query_history)} queries')
+  print(f'{len(TEACHER.query_history())} queries')
   print('++')
-  for q in TEACHER.query_history:
+  for q in TEACHER.query_history():
     if ACCEPTOR.accepts(q):
       print(q)
   print('--')
-  for q in TEACHER.query_history:
+  for q in TEACHER.query_history():
     if ACCEPTOR.rejects(q):
       print(q)
   ACCEPTOR.print_acceptor()

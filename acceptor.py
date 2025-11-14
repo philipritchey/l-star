@@ -53,7 +53,7 @@ class Acceptor:
     Returns:
         str: input alphabet
     '''
-    alphabet_set = set()
+    alphabet_set: set[str] = set()
     for state_str, _ in self.d.items():
       _, a = state_str
       alphabet_set.add(a)
